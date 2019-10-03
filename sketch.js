@@ -19,6 +19,8 @@ function draw() {
 
     Object.values(regions).forEach(r => r.draw())
     
+    fill(0);
+    textSize(14);
     text(state, 10, 900);
 }
 
@@ -28,7 +30,7 @@ function draw() {
 function keyPressed() {
     if(key === "D"){
         if(!isAnythingActive()) {
-            let newRegion = new MaskRegion();
+            let newRegion = new MaskRegion(regionCount);
             newRegion.active = true;
             regions[regionCount++] = newRegion;
             state = "Adding points";
@@ -40,17 +42,16 @@ function keyPressed() {
     if(key === " "){
         if(isAnythingActive()){
             let region = Object.values(regions).filter(r => r.active)[0];
-            region.points.push({x: mouseX, y: mouseY});
+            region.points.push(new createVector(mouseX, mouseY));
         }
     }
     if(key === "G"){
         let grabbedRegion, grabbedPointIndex;
-        let closestPoint = {x: 10**5, y: 10**5};
-        let mouseVec = {x: mouseX, y: mouseY};
-        regions.forEach(id => {
-            let region = regions[id];
-            regions.points.forEach((p, i) => {
-                if(distance(mouseVec, p) < distance(mouseVec, closestPoint)) {
+        let closestPoint = createVector(10**5, 10**5);
+        let mouseVec = createVector(mouseX, mouseY);
+        Object.values(regions).forEach(region => {
+            region.points.forEach((p, i) => {
+                if(p5.Vector.dist(mouseVec, p) < p5.Vector.dist(mouseVec, closestPoint)) {
                     closestPoint = p;
                     grabbedRegion = region;
                     grabbedPointIndex = i;
@@ -64,7 +65,7 @@ function keyPressed() {
 
     if(key === "P"){
         let activeRegion = Object.values(regions).filter(r => r.active)[0];
-        activeRegion.points[activeRegion.grabbedPoint] = vertex(mouseX, mouseY);
+        activeRegion.points[activeRegion.grabbedPoint] = createVector(mouseX, mouseY);
         activeRegion.active = false;
         activeRegion.grabbedPoint = null;
     }
@@ -77,7 +78,8 @@ function keyReleased() {
 
 class MaskRegion {
     
-    constructor(){
+    constructor(id){
+        this.id = id;
         this.active = false;
         this.grabbedPoint = null;
         this.points = [];
@@ -107,6 +109,17 @@ class MaskRegion {
             this.points.forEach(p => vertex(p.x, p.y));
             endShape(CLOSE);
         }
+
+        let center = createVector(0, 0);
+        this.points.forEach(p =>{
+            center.add(p);
+        })
+        let numPts = this.points.length;
+
+        fill(0);
+        textSize(24);
+        text(this.id, center.x/numPts, center.y/numPts);
+        noFill();
     }
 }
 
