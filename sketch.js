@@ -3,6 +3,13 @@ let regionCount = 0;
 let state = "Nothing active";
 let cursorSize = 10;
 
+let drawBoundary = true;
+let drawLetters = true;
+let drawIndex = true;
+
+
+let meter;
+
 function isAnythingActive(){
     return Object.values(regions).some(r => r.active);
 }
@@ -10,10 +17,14 @@ function isAnythingActive(){
 function setup() {
   createCanvas(1000, 1000);
   textFont("Courier New");
+  meter = new FPSMeter(document.body);
 }
+
+let time = 0;
 
 function draw() {
     clear();
+    time = Date.now()/1000;
 
     noFill();
     strokeWeight(cursorSize);
@@ -23,6 +34,7 @@ function draw() {
     fill(0);
     textSize(14);
     text(state, 10, 900);
+    meter.tick();
 }
 
 
@@ -106,33 +118,43 @@ class MaskRegion {
             if(this.grabbedPoint) this.drawWhileMovingPoint();
             else this.drawWhileAddingPoint()
         } else {
-            beginShape();
-            this.points.forEach(p => vertex(p.x, p.y));
-            endShape(CLOSE);
+            if(drawBoundary){ 
+                beginShape();
+                this.points.forEach(p => vertex(p.x, p.y));
+                endShape(CLOSE);
+            }
         }
 
         let center = createVector(0, 0);
         this.points.forEach(p =>{
             center.add(p);
         })
-        let numPts = this.points.length;
 
-        fill(0);
-        textSize(24);
-        text(this.id, center.x/numPts, center.y/numPts);
-        noFill();
+        if(drawIndex) {
+            let numPts = this.points.length;
 
-        let spots = generateLetterRoots(this);
-        let txt = [];
-        spots.flat(1).forEach((spot, i) => {
-            // ellipse(spot.x, spot.y, 5);
-            let char = sampleText[i%sampleText.length];
-            txt.push(char);
             fill(0);
-            textSize(14);
-            text(char, spot.x, spot.y);
+            textSize(24);
+            text(this.id, center.x/numPts, center.y/numPts);
             noFill();
-        });
+        }
+
+        if(drawLetters) {
+            let spots = generateLetterRoots(this);
+            let txt = [];
+            spots.flat(1).forEach((spot, i) => {
+                // ellipse(spot.x, spot.y, 5);
+                let spd = 0.8 + noise(i)*0.4;
+                let dev = {x: sin(time*spd)*3, y: cos(time*spd)*3};
+
+                let char = sampleText[i%sampleText.length];
+                txt.push(char);
+                fill(0);
+                textSize(14);
+                text(char, spot.x+dev.x, spot.y+dev.y);
+                noFill();
+            });
+        }
     }
 }
 
