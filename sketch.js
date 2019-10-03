@@ -9,6 +9,7 @@ function isAnythingActive(){
 
 function setup() {
   createCanvas(1000, 1000);
+  textFont("Courier New");
 }
 
 function draw() {
@@ -120,6 +121,22 @@ class MaskRegion {
         textSize(24);
         text(this.id, center.x/numPts, center.y/numPts);
         noFill();
+
+        
+        if(!isAnythingActive()) {
+            let spots = generateLetterRoots(this);
+            let txt = [];
+            spots.flat(1).forEach((spot, i) => {
+                // ellipse(spot.x, spot.y, 5);
+                let char = sampleText[i%sampleText.length];
+                txt.push(char);
+                fill(0);
+                textSize(14);
+                text(char, spot.x, spot.y);
+                noFill();
+            });
+            let f = 5;
+        }
     }
 }
 
