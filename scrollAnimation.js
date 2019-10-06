@@ -19,7 +19,7 @@ function* typeRegion(region, framesPerLetter){
     } 
 }
 
-function* typeLastLine(region, framesPerLetter){
+function* typeLastLine(region){
     let lastLine = region.spots.slice(-1)[0];
     let otherLetters = region.spots.slice(0, -1).flat(1);
     for(let spot of lastLine){
@@ -29,6 +29,19 @@ function* typeLastLine(region, framesPerLetter){
     }
 }
 
+function* scrollBack(region, openSpots){
+    let spots = region.spots.flat(1);
+    let startInd = openSpots;
+    let textLen = spots.length - openSpots
+    while(startInd <= 0){
+        yield spots.slice(startInd, startInd+textLen);
+        startInd--;
+    }
+}
+
+function* dropLetters(region, numToDrop){
+    
+}
 
 function* createGesture(timeStart, duration, timeFunc, motionFunc){
     let timeDiff = timeFunc() - timeStart;
