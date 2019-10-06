@@ -19,9 +19,13 @@ function* typeRegion(region, framesPerLetter){
     } 
 }
 
-function* counter(){
-    for(let i = 0; i < 10; i++){
-        yield i;
+function* typeLastLine(region, framesPerLetter){
+    let lastLine = region.spots.slice(-1)[0];
+    let otherLetters = region.spots.slice(0, -1).flat(1);
+    for(let spot of lastLine){
+        console.log(spot);
+        otherLetters.push(spot);
+        yield otherLetters;
     }
 }
 
