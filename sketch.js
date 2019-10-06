@@ -55,7 +55,7 @@ function keyPressed() {
     if(key === " "){
         if(isAnythingActive()){
             let region = Object.values(regions).filter(r => r.active)[0];
-            region.points.push(new createVector(mouseX, mouseY));
+            region.addPoint(new createVector(mouseX, mouseY));
         }
     }
     if(key === "G"){
@@ -96,6 +96,9 @@ class MaskRegion {
         this.active = false;
         this.grabbedPoint = null;
         this.points = [];
+        this.spots = []; //internal spots where letters can be placed.
+        this.activeAnimation = null;
+        this.animationState = null;
     }
 
     drawWhileAddingPoint(){
@@ -113,12 +116,21 @@ class MaskRegion {
         ellipse(mouseX, mouseY, cursorSize);
     }
 
-    draw(){
-        if(this.active){
-            if(this.grabbedPoint) this.drawWhileMovingPoint();
-            else this.drawWhileAddingPoint()
-        } else {
-            if(drawBoundary){ 
+    updateInternalPoints() {
+        this.spots = generateLetterRoots(this);
+    }
+
+    addPoint(p){
+        this.points.push(p);
+        this.updateInternalPoints();
+    }
+
+    draw() {
+        if(drawBoundary) {
+            if(this.active){
+                if(this.grabbedPoint) this.drawWhileMovingPoint();
+                else this.drawWhileAddingPoint()
+            } else {
                 beginShape();
                 this.points.forEach(p => vertex(p.x, p.y));
                 endShape(CLOSE);
@@ -139,8 +151,13 @@ class MaskRegion {
             noFill();
         }
 
+        let spots = this.spots;
+        if(this.activeAnimation){
+            let animationVal = this.activeAnimation.next();
+            if(!animationVal.done) spots = animationVal.value;
+        }
+
         if(drawLetters) {
-            let spots = generateLetterRoots(this);
             let txt = [];
             spots.flat(1).forEach((spot, i) => {
                 // ellipse(spot.x, spot.y, 5);
@@ -151,10 +168,10 @@ class MaskRegion {
                 txt.push(char);
                 fill(0);
                 textSize(14);
-                text(char, spot.x+dev.x, spot.y+dev.y);
+                text(char, spot.x, spot.y);
                 noFill();
             });
-        }
+        }    
     }
 }
 

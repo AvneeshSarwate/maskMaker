@@ -27,7 +27,7 @@ function generateLetterRoots(region){
             let pt = {x, y};
             if(isPointInternal(pt, region, bbox)) row.push(pt);
         }
-        spots.push(row);
+        if(row.length > 0) spots.push(row);
     }
     return spots;
 }
