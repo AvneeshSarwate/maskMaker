@@ -59,6 +59,8 @@ function keyPressed() {
         }
     }
     if(key === "G"){
+        Object.values(regions).forEach(r => {r.active = false});
+        state = "Moving existing point";
         let grabbedRegion, grabbedPointIndex;
         let closestPoint = createVector(10**5, 10**5);
         let mouseVec = createVector(mouseX, mouseY);
@@ -72,15 +74,17 @@ function keyPressed() {
             })
         });
         Object.values(regions).forEach(r => {r.active = false});
-        grabbedRegion.active = true;
         grabbedRegion.grabbedPoint = grabbedPointIndex;
+        grabbedRegion.active = true;
     }
 
     if(key === "P"){
         let activeRegion = Object.values(regions).filter(r => r.active)[0];
         activeRegion.points[activeRegion.grabbedPoint] = createVector(mouseX, mouseY);
+        activeRegion.updateInternalPoints();
         activeRegion.active = false;
         activeRegion.grabbedPoint = null;
+        state = "Nothing active"
     }
 
 }
@@ -128,7 +132,7 @@ class MaskRegion {
     draw() {
         if(drawBoundary) {
             if(this.active){
-                if(this.grabbedPoint) this.drawWhileMovingPoint();
+                if(this.grabbedPoint != null) this.drawWhileMovingPoint(); //want index-0 to be true
                 else this.drawWhileAddingPoint()
             } else {
                 beginShape();
