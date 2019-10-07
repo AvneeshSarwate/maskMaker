@@ -95,7 +95,7 @@ function keyReleased() {
 
 class MaskRegion {
     
-    constructor(id){
+    constructor(id, text){
         this.id = id;
         this.active = false;
         this.grabbedPoint = null;
@@ -103,6 +103,8 @@ class MaskRegion {
         this.spots = []; //internal spots where letters can be placed.
         this.activeAnimation = null;
         this.animationState = null;
+        this.textIndex = 0;
+        this.text = text ? text : sampleText;
     }
 
     drawWhileAddingPoint(){
@@ -155,7 +157,7 @@ class MaskRegion {
             noFill();
         }
 
-        let spots = this.spots;
+        let spots = this.spots.flat(1).map((s, i) => ({i, s}));
         if(this.activeAnimation){
             let animationVal = this.activeAnimation.next();
             if(!animationVal.done) spots = animationVal.value;
@@ -163,16 +165,12 @@ class MaskRegion {
 
         if(drawLetters) {
             let txt = [];
-            spots.flat(1).forEach((spot, i) => {
-                // ellipse(spot.x, spot.y, 5);
-                let spd = 0.8 + noise(i)*0.4;
-                let dev = {x: sin(time*spd)*3, y: cos(time*spd)*3};
-
-                let char = sampleText[i%sampleText.length];
+            spots.flat(1).forEach(spot => {
+                let char = sampleText[(spot.i+this.textIndex)%this.text.length];
                 txt.push(char);
                 fill(0);
                 textSize(14);
-                text(char, spot.x, spot.y);
+                text(char, spot.s.x, spot.s.y);
                 noFill();
             });
         }    

@@ -20,8 +20,8 @@ function* typeRegion(region, framesPerLetter){
 }
 
 function* typeLastLine(region){
-    let lastLine = region.spots.slice(-1)[0];
-    let otherLetters = region.spots.slice(0, -1).flat(1);
+    let otherLetters = region.spots.slice(0, -1).flat(1).map((s, i) => ({s, i})); //mapping "spot index" to point position
+    let lastLine = region.spots.slice(-1)[0].map((s, i) => ({s, i: i+otherLetters.length}));
     for(let spot of lastLine){
         otherLetters.push(spot);
         yield otherLetters;
@@ -29,11 +29,11 @@ function* typeLastLine(region){
 }
 
 function* scrollBack(region, openSpots){
-    let spots = region.spots.flat(1);
+    let spots = region.spots.flat(1); 
     let startInd = openSpots-1;
     let textLen = spots.length - openSpots
     while(startInd >= 0){
-        yield spots.slice(startInd, startInd+textLen);
+        yield spots.slice(startInd, startInd+textLen).map((s, i) => ({s, i})); //mapping "spot index" to point position
         startInd--;
     }
 }
@@ -44,13 +44,14 @@ function* dropLetters(region, numToDrop){
     let letterDropGens = region.spots.flat(1).slice(0, numToDrop)
                          .map(l => letterGravity(l, Math.random(), dropFinished));
 
-
-    let newLetters = region.spots.flat(1).map(l => l);
+    let newLetters = region.spots.flat(1).map((s, i) => ({s, i})); //mapping "spot index" to point position
     let droppingLetters = letterDropGens.map(g => g.next());
 
     while(droppingLetters.length > 0){
-        droppingLetters = letterDropGens.map(g => g.next()).filter(r => !r.done).map(r => r.value);
-        newLetters.splice(0, droppingLetters.length, ...droppingLetters);
+        let preFilterLength = droppingLetters.length;
+        droppingLetters = letterDropGens.map((g, i) => ({i, v: g.next()})) //mapping "spot index" to point position
+                          .filter(r => !r.v.done).map(r => ({i: r.i, s: r.v.value}));
+        newLetters.splice(0, preFilterLength, ...droppingLetters);
         yield newLetters;
     }
 }
@@ -59,6 +60,7 @@ function* letterGravity(startPos, dropDelay, finishFunc){
     let startTime = Date.now()/1000;
     let startVec = createVector(startPos.x, startPos.y);
     let dev = createVector(0, 0);
+
     while(!finishFunc(startVec.add(dev))){
         yield startVec.add(dev);
 
@@ -67,29 +69,25 @@ function* letterGravity(startPos, dropDelay, finishFunc){
             let dropTime = elapsedTime-dropDelay;
             dev = createVector(0, dropTime**2);
         }
-        
     }
 }
 
 function* dropAndScroll(region, textContentUpdate){
     while(true){
         let lastLineLen = region.spots.slice(-1)[0].length;
-
-//         let dropGen = dropLetters(region, lastLineLen);
-//         let scrollGen = scrollBack(region, lastLineLen);
-//         let lastLineGen = typeLastLine(region);
-
-//         for(let v = dropGen.next(); !v.done; v = dropGen.next()) yield v.value;
-//         textContentUpdate();
-//         for(let v = scrollGen.next(); !v.done; v = scrollGen.next()) yield v.value;
-//         for(let v = lastLineGen.next(); !v.done; v = lastLineGen.next()) yield v.value;
-
+        
         yield* dropLetters(region, lastLineLen);
         textContentUpdate();
         yield* scrollBack(region, lastLineLen);
         yield* typeLastLine(region);
     }
 }
+
+function activateDropAndScroll(regionIndex){
+    let region = regions[regionIndex];
+    region.activeAnimation = dropAndScroll(region, () => {region.textIndex += region.spots.slice(-1)[0].length})
+}
+
 
 function* createGesture(timeStart, duration, timeFunc, motionFunc){
     let timeDiff = timeFunc() - timeStart;
