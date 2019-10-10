@@ -1,3 +1,5 @@
+let now = () => Date.now()/1000;
+
 function* typeLine(region, lineIndex, framesPerLetter){
     let frameCount = 0;
     let line = region.spots[lineIndex];
@@ -57,14 +59,14 @@ function* dropLetters(region, numToDrop){
 }
 
 function* letterGravity(startPos, dropDelay, finishFunc){
-    let startTime = Date.now()/1000;
+    let startTime = now();
     let startVec = createVector(startPos.x, startPos.y);
     let dev = createVector(0, 0);
 
     while(!finishFunc(startVec.add(dev))){
         yield startVec.add(dev);
 
-        let elapsedTime = Date.now() /1000 - startTime;
+        let elapsedTime = now() - startTime;
         if(elapsedTime > dropDelay){
             let dropTime = elapsedTime-dropDelay;
             dev = createVector(0, dropTime**2);
@@ -99,7 +101,7 @@ function* wave(region){
     let center = createVector(sumPos.x/spots.length, sumPos.y/spots.length);
 
     while(true){
-        let time = Date.now()/1000;
+        let time = now();
         yield spots.map((sp, i) => {
             let dev = p5.Vector.sub(center, sp).normalize().mult(rad()*sinN(time+rad()*ripples()));
             return {i, s: p5.Vector.add(dev, sp)};
@@ -107,13 +109,24 @@ function* wave(region){
     }
 }
 
-function* useMatterPos(region){
-    while(true){
-        yield Object.keys(region.spotToBodyMap).map(i => {
-            let bod = region.spotToBodyMap[i].body;
-            return {i, s: {x: bod.position.x, y: bod.position.y}};
+function* useMatterPos(region, duration){
+    let spots = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].spot).map(s => createVector(s.x, s.y));
+    let bodies = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].body);
+    let keys = Object.keys(region.spotToBodyMap);
+    let timeElapsed = 0;
+    let startTime = now();
+    while(duration == null || elapsedTime < startTime){
+        elapsedTime = now() - startTime;
+        let s = sinN(now());
+        yield bodies.map((bod, i) => {
+            let bodVec = createVector(bod.position.x, bod.position.y);
+            return {i, s: p5.Vector.lerp(spots[i], bodVec, 1)};
         });
     }
+}
+
+function* explodeAndRestore(region, dropTime, restoreTime){
+    
 }
 
 function activateMatterAnimation(regionIndex){

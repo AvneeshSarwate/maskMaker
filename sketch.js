@@ -125,6 +125,7 @@ class MaskRegion {
         this.textIndex = 0;
         this.text = text ? text : sampleText;
         this.matterWorld = null;
+        this.matterLerp = 0;
     }
 
     drawWhileAddingPoint(){
@@ -146,6 +147,28 @@ class MaskRegion {
         this.spots = generateLetterRoots(this);
     }
 
+    stopRunner(){
+        Matter.Runner.stop(this.matterRunner);
+    }
+
+    startRunner(){
+        Matter.Runner.start(this.matterRunner, this.matterEngine);
+    }
+
+    restoreBodies(){
+        Object.values(this.spotToBodyMap).forEach(v => {
+            let spot = v.spot;
+            let body = v.body;
+            Matter.Body.setPosition(body, spot);
+        })
+    }
+
+    refreshBodies(){
+        this.stopRunner();
+        this.restoreBodies();
+        this.startRunner();
+    }
+
     updateMatterWorldFromSpots(){
         let Engine = Matter.Engine,
             Render = Matter.Render,
@@ -160,6 +183,7 @@ class MaskRegion {
         // create engine
         let engine = Engine.create(),
             world = engine.world;
+        this.matterEngine = engine;
 
         //  // create renderer
         // var render = Render.create({
@@ -176,24 +200,31 @@ class MaskRegion {
 
         // create runner
         var runner = Runner.create();
+        this.matterRunner = runner;
         Runner.run(runner, engine);
 
         this.matterWorld = world;
 
+        //TODO - extend the ends of the lines out so they intersect and are closed
         let walls = this.points.map((spt, i, spts) => {
             let p1 = spt; 
             let p2 = spts[(i+1)%spts.length];
             let mid = {x: (p1.x+p2.x)/2, y: (p1.y+p2.y+1)/2};
             let path = [p1.x, p1.y, p1.x+5, p1.y+5, p2.x+5, p2.y+5, p2.x, p2.y].join(" ");
-            return Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true});
+            return Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true, restitution: 0.9});
         });
         World.add(world, walls);
 
         this.spotToBodyMap = {};
+        this.matterBodies = [];
         let ls = letterScale; 
+        //TODO - collision filtering (both between shapes, and creating random subsets within shapes for performance)
+        //TODO - place letters closer inside (or move region walls out) so that letters dont pass thru walls on init or rounding error
         let letterBodies = this.spots.flat(1).map((spot, i) => {
-            let body = Bodies.rectangle(spot.x, spot.y, letterSize.x*ls, letterSize.y*ls, {isStatic: true});
+            let colFilt = {group: Math.random() < 0.5 ? 1 : 2}
+            let body = Bodies.rectangle(spot.x, spot.y, letterSize.x*ls, letterSize.y*ls, {isStatic: true, collisionFilter: colFilt});
             this.spotToBodyMap[i] = {spot, body};
+            this.matterBodies.push(body);
             return body;
         });
         World.add(world, letterBodies);
