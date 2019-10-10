@@ -7,6 +7,9 @@ let drawBoundary = true;
 let drawLetters = true;
 let drawIndex = true;
 
+let useMatrix = false;
+let matrixVal = [1, 0, 0,
+              0, 1, 0];
 
 let meter;
 
@@ -20,10 +23,21 @@ function setup() {
   meter = new FPSMeter(document.body);
 }
 
+let runHookIn = false;
+function drawLoopHookIn(){
+
+}
+
 let time = 0;
 
 function draw() {
     clear();
+
+    if(useMatrix) {
+        resetMatrix();
+        applyMatrix(...matrixVal);
+    }
+
     time = Date.now()/1000;
 
     noFill();
@@ -35,6 +49,8 @@ function draw() {
     textSize(14);
     text(state, 10, 900);
     meter.tick();
+
+    if(runHookIn) drawLoopHookIn();
 }
 
 
@@ -105,6 +121,7 @@ class MaskRegion {
         this.animationState = null;
         this.textIndex = 0;
         this.text = text ? text : sampleText;
+        this.matterWorld = null;
     }
 
     drawWhileAddingPoint(){
@@ -124,6 +141,50 @@ class MaskRegion {
 
     updateInternalPoints() {
         this.spots = generateLetterRoots(this);
+    }
+
+    updateMatterWorldFromSpots(){
+        let Engine = Matter.Engine,
+            Render = Matter.Render,
+            Runner = Matter.Runner,
+            Composites = Matter.Composites,
+            Common = Matter.Common,
+            MouseConstraint = Matter.MouseConstraint,
+            Mouse = Matter.Mouse,
+            World = Matter.World,
+            Bodies = Matter.Bodies;
+
+        // create engine
+        let engine = Engine.create(),
+            world = engine.world;
+
+         // create renderer
+        var render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: 800,
+                height: 600,
+                showAngleIndicator: true,
+            }
+        });
+
+        Render.run(render);
+
+        // create runner
+        var runner = Runner.create();
+        Runner.run(runner, engine);
+
+        this.matterWorld = world;
+
+        let walls = this.points.map((spt, i, spts) => {
+            let p1 = spt; 
+            let p2 = spts[(i+1)%spts.length];
+            let mid = {x: (p1.x+p2.x)/2, y: (p1.y+p2.y+1)/2};
+            let path = [p1.x, p1.y, p1.x, p1.y+1, p2.x, p2.y+1, p2.x, p2.y].join(" ");
+            return Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true});
+        })
+        World.add(world, walls);
     }
 
     addPoint(p){

@@ -83,6 +83,25 @@ function* dropAndScroll(region, textContentUpdate){
     }
 }
 
+let sinN = v => (Math.sin(v)+1)/2;
+
+let rad = () =>  5;
+let ripples = () => PI / (letterSize.y * 4);
+
+function* wave(region){
+    let spots = region.spots.flat(1).map(sp => createVector(sp.x, sp.y));
+    let sumPos = spots.reduce((acc, cur) => ({x: acc.x+cur.x, y:acc.y+cur.y}));
+    let center = createVector(sumPos.x/spots.length, sumPos.y/spots.length);
+
+    while(true){
+        let time = Date.now()/1000;
+        yield spots.map((sp, i) => {
+            let dev = p5.Vector.sub(center, sp).normalize().mult(rad()*sinN(time+rad()*ripples()));
+            return {i, s: p5.Vector.add(dev, sp)};
+        });
+    }
+}
+
 function activateDropAndScroll(regionIndex){
     let region = regions[regionIndex];
     region.activeAnimation = dropAndScroll(region, () => {region.textIndex += region.spots.slice(-1)[0].length})
