@@ -83,6 +83,11 @@ function* dropAndScroll(region, textContentUpdate){
     }
 }
 
+function activateDropAndScroll(regionIndex){
+    let region = regions[regionIndex];
+    region.activeAnimation = dropAndScroll(region, () => {region.textIndex += region.spots.slice(-1)[0].length})
+}
+
 let sinN = v => (Math.sin(v)+1)/2;
 
 let rad = () =>  5;
@@ -102,10 +107,23 @@ function* wave(region){
     }
 }
 
-function activateDropAndScroll(regionIndex){
-    let region = regions[regionIndex];
-    region.activeAnimation = dropAndScroll(region, () => {region.textIndex += region.spots.slice(-1)[0].length})
+function* useMatterPos(region){
+    while(true){
+        yield Object.keys(region.spotToBodyMap).map(i => {
+            let bod = region.spotToBodyMap[i].body;
+            return {i, s: {x: bod.position.x, y: bod.position.y}};
+        });
+    }
 }
+
+function activateMatterAnimation(regionIndex){
+    let region = regions[regionIndex];
+    region.updateMatterWorldFromSpots()
+    region.activeAnimation = useMatterPos(region);
+    Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
+
+}
+
 
 
 function* createGesture(timeStart, duration, timeFunc, motionFunc){

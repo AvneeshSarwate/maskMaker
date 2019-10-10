@@ -11,6 +11,9 @@ let useMatrix = false;
 let matrixVal = [1, 0, 0,
               0, 1, 0];
 
+
+let letterScale = 0.5; //scale down letter size to give them space to move
+
 let meter;
 
 function isAnythingActive(){
@@ -158,18 +161,18 @@ class MaskRegion {
         let engine = Engine.create(),
             world = engine.world;
 
-         // create renderer
-        var render = Render.create({
-            element: document.body,
-            engine: engine,
-            options: {
-                width: 800,
-                height: 600,
-                showAngleIndicator: true,
-            }
-        });
+        //  // create renderer
+        // var render = Render.create({
+        //     element: document.body,
+        //     engine: engine,
+        //     options: {
+        //         width: width,
+        //         height: height,
+        //         showAngleIndicator: true,
+        //     }
+        // });
 
-        Render.run(render);
+        // Render.run(render);
 
         // create runner
         var runner = Runner.create();
@@ -181,10 +184,20 @@ class MaskRegion {
             let p1 = spt; 
             let p2 = spts[(i+1)%spts.length];
             let mid = {x: (p1.x+p2.x)/2, y: (p1.y+p2.y+1)/2};
-            let path = [p1.x, p1.y, p1.x, p1.y+1, p2.x, p2.y+1, p2.x, p2.y].join(" ");
+            let path = [p1.x, p1.y, p1.x+5, p1.y+5, p2.x+5, p2.y+5, p2.x, p2.y].join(" ");
             return Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true});
-        })
+        });
         World.add(world, walls);
+
+        this.spotToBodyMap = {};
+        let ls = letterScale; 
+        let letterBodies = this.spots.flat(1).map((spot, i) => {
+            let body = Bodies.rectangle(spot.x, spot.y, letterSize.x*ls, letterSize.y*ls, {isStatic: true});
+            this.spotToBodyMap[i] = {spot, body};
+            return body;
+        });
+        World.add(world, letterBodies);
+        
     }
 
     addPoint(p){
