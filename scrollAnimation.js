@@ -120,13 +120,32 @@ function* useMatterPos(region, duration){
         let s = sinN(now());
         yield bodies.map((bod, i) => {
             let bodVec = createVector(bod.position.x, bod.position.y);
-            return {i, s: p5.Vector.lerp(spots[i], bodVec, 1)};
+            return {i, s: p5.Vector.lerp(spots[i], bodVec, region.matterLerp)};
         });
     }
 }
 
 function* explodeAndRestore(region, dropTime, restoreTime){
-    
+    let startTime = now();
+    let spots = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].spot).map(s => createVector(s.x, s.y));
+    let bodies = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].body);
+    while(true){
+        let elapsedTime = now() % (dropTime+restoreTime);
+        if(elapsedTime <= dropTime){
+            region.startRunner();
+            yield* useMatterPos(region);
+        } else {
+            region.stopRunner();
+            while(elapsedTime > dropTime){ //i.e., the mod value hasn't wrapped over and the restoreTime isn't finished
+                let lerpVal = (elapsedTime - dropTime)/restoreTime
+                yield bodies.map((bod, i) => {
+                    let bodVec = createVector(bod.position.x, bod.position.y);
+                    return {i, s: p5.Vector.lerp(bodVec, spots[i], lerpVal)};
+                });
+            }
+            region.restoreBodies();
+        }
+    }
 }
 
 function activateMatterAnimation(regionIndex){

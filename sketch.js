@@ -125,7 +125,7 @@ class MaskRegion {
         this.textIndex = 0;
         this.text = text ? text : sampleText;
         this.matterWorld = null;
-        this.matterLerp = 0;
+        this.matterLerp = 1;
     }
 
     drawWhileAddingPoint(){
