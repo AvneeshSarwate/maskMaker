@@ -132,7 +132,7 @@ function activateMatterAnimation(regionIndex){
     Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
 
 }
-
+//TODO rewrite this by adding duration parameter to updateMatterPos, and creating a lerp generator
 function* explodeAndRestore(region, dropTime, restoreTime){
     let startTime = now();
     let spots = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].spot).map(s => createVector(s.x, s.y));
