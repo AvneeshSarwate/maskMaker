@@ -175,6 +175,62 @@ class MaskRegion {
         })
     }
 
+    spotsToWordSlots(spots){
+        spots = spots ? spots : this.spots;
+        let tracker = [];
+        this.rowMap = tracker;
+        for(let i = 0; i < spots.length; i++){
+            let row = spots[i];
+            for(let j = 0; j < row.length; j++){
+                tracker.push({row: i, col: j});
+            }
+        }
+        let runningWord = [];
+        let words = this.text.split(" ");
+
+        let rowInd = 0;
+        let colInd = 0;
+        let rowLen = 0;
+        this.wordPos = {};
+        words.forEach((w, i) => {
+            if(colInd+w.length > spots[rowInd].length && rowInd != spots.length-1){ //if no overflow and not the last row, put on next row
+                rowInd++;
+                colInd = 0;
+            }
+            this.wordPos[i] = {row: rowInd, col: colInd};
+            colInd += w.length;
+        });
+    }
+
+    createWordBodies(){
+        this.initMatter();
+
+        //TODO - extend the ends of the lines out so they intersect and are closed
+        let wallCat = 0x10;
+        let walls = this.points.map((spt, i, spts) => {
+            let collisionFilter = {category: wallCat, mask: 0x1F}; 
+            let p1 = spt; 
+            let p2 = spts[(i+1)%spts.length];
+            let xp = 10; //expander
+            let mid = {x: (p1.x+p2.x)/2, y: (p1.y+p2.y+xp)/2};
+            let path = [p1.x, p1.y, p1.x+xp, p1.y+xp, p2.x+xp, p2.y+xp, p2.x, p2.y].join(" ");
+            return Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true, restitution: 0.9, collisionFilter});
+        });
+        World.add(this.matterWorld, walls);
+
+    }
+
+    wordDraw(){
+        let words = this.text.split(" ");
+        words.forEach((w, i) => {
+            let pos = this.spots[this.wordPos[i].row][this.wordPos[i].col];
+            fill(0);
+            textSize(14);
+            text(w, pos.x, pos.y);
+            noFill();
+        });
+    }
+
     clearWorld(){
         Matter.World.clear(this.matterWorld);
     }
@@ -206,6 +262,7 @@ class MaskRegion {
         Matter.Runner.run(runner, engine);
 
         this.matterWorld = world;
+        // world.bounds = { min: { x: 0, y: 0 }, max: { x: width, y: height } };
         matterObjs.push({runner: this.matterRunner, world: this.matterWorld, engine: this.matterEngine});
     }
 
@@ -241,7 +298,7 @@ class MaskRegion {
             let randSelect = arr => arr[Math.floor(Math.random()*arr.length)];
             let cats = [0x1, 0x2, 0x4, 0x8];
             let cat = randSelect(cats);
-            let colFilt = {mask: wallCat | cat, category: cat};
+            let colFilt = {mask: wallCat | cat, category: cat, group: 0-cat};
             let body = Bodies.rectangle(spot.x, spot.y, letterSize.x*ls, letterSize.y*ls, {isStatic: true, collisionFilter: colFilt});
             this.spotToBodyMap[i] = {spot, body};
             this.matterBodies.push(body);

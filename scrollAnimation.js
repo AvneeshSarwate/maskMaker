@@ -151,7 +151,7 @@ function* explodeAndRestore(region, dropTime, restoreTime, hangTime){
 
         region.restoreSpotBodies();
 
-        yield* idleYield(2, spots.map((s, i)=>({s, i})));
+        if(hangTime) yield* idleYield(hangTime, spots.map((s, i)=>({s, i})));
 
         region.startRunner();
     }
@@ -177,11 +177,11 @@ function* lerpTask(bodies, spots, runtime){
     }
 }
 
-function activateDropAndRaise(regionIndex, dropTime, restoreTime){
+function activateDropAndRaise(regionIndex, dropTime, restoreTime, hangTime){
     let region = regions[regionIndex];
     region.animationDraw = region.letterDraw;
     region.updateMatterWorldFromSpots();
-    region.activeAnimation = explodeAndRestore(region, dropTime, restoreTime);
+    region.activeAnimation = explodeAndRestore(region, dropTime, restoreTime, hangTime);
     Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
 }
 
