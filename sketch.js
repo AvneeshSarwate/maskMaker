@@ -427,15 +427,22 @@ class MaskRegion {
 
 function rangeWarp(openRange, sizeDiff, cycleTime){
     return function(fontSize, letterInd){
-        let numLetters = this.spotsFlat.length;
-        let start = Math.floor(((now()/cycleTime) %1) * numLetters);
-
-        return start <= letterInd && letterInd <= start+openRange ? fontSize+sizeDiff : fontSize
+        try{
+            let numLetters = this.spotsFlat.length;
+            let start = Math.floor(((now()/cycleTime) %1) * numLetters);
+            return start <= letterInd && letterInd <= start+openRange ? fontSize+sizeDiff : fontSize
+        } catch {
+            return fontSize
+        }
     }
 }
 
 function vertSine(pos, i){
-    let vec = {x: pos.x, y: pos.y+sinN(now()+i/3*PI)*20};
-    return isPointInternal(vec, this, this.bbox) ? vec : pos;
+    try {
+        let vec = {x: pos.x, y: pos.y+sinN(now()+i/3*PI)*20};
+        return isPointInternal(vec, this, this.bbox) ? vec : pos;
+    } catch{
+        return pos;
+    }
 }
 
