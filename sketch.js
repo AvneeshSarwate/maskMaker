@@ -155,7 +155,7 @@ class MaskRegion {
         Matter.Runner.start(this.matterRunner, this.matterEngine);
     }
 
-    restoreBodies(){
+    restoreSpotBodies(){
         Object.values(this.spotToBodyMap).forEach(v => {
             let spot = v.spot;
             let body = v.body;
@@ -163,25 +163,13 @@ class MaskRegion {
         })
     }
 
-    refreshBodies(){
-        this.stopRunner();
-        this.restoreBodies();
-        this.startRunner();
+    clearWorld(){
+        Matter.World.clear(this.matterWorld);
     }
 
-    updateMatterWorldFromSpots(){
-        let Engine = Matter.Engine,
-            Render = Matter.Render,
-            Runner = Matter.Runner,
-            Composites = Matter.Composites,
-            Common = Matter.Common,
-            MouseConstraint = Matter.MouseConstraint,
-            Mouse = Matter.Mouse,
-            World = Matter.World,
-            Bodies = Matter.Bodies;
-
+    initMatter(){
         // create engine
-        let engine = Engine.create(),
+        let engine = Matter.Engine.create(),
             world = engine.world;
         this.matterEngine = engine;
 
@@ -198,22 +186,39 @@ class MaskRegion {
 
         // Render.run(render);
 
+        // this.spots = this.spots.slice(1, -1).map(s => s.slice(1, -1));
+
         // create runner
-        var runner = Runner.create();
+        var runner = Matter.Runner.create();
         this.matterRunner = runner;
-        Runner.run(runner, engine);
+        Matter.Runner.run(runner, engine);
 
         this.matterWorld = world;
+    }
+
+
+
+    updateMatterWorldFromSpots(){
+        let Engine = Matter.Engine,
+            Render = Matter.Render,
+            Runner = Matter.Runner,
+            World = Matter.World,
+            Bodies = Matter.Bodies;
+
+        this.initMatter();
 
         //TODO - extend the ends of the lines out so they intersect and are closed
+        let wallCat = 0x10;
         let walls = this.points.map((spt, i, spts) => {
+            let collisionFilter = {category: wallCat, mask: 0x1F}; 
             let p1 = spt; 
             let p2 = spts[(i+1)%spts.length];
-            let mid = {x: (p1.x+p2.x)/2, y: (p1.y+p2.y+1)/2};
-            let path = [p1.x, p1.y, p1.x+5, p1.y+5, p2.x+5, p2.y+5, p2.x, p2.y].join(" ");
-            return Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true, restitution: 0.9});
+            let xp = 10; //expander
+            let mid = {x: (p1.x+p2.x)/2, y: (p1.y+p2.y+xp)/2};
+            let path = [p1.x, p1.y, p1.x+xp, p1.y+xp, p2.x+xp, p2.y+xp, p2.x, p2.y].join(" ");
+            return Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true, restitution: 0.9, collisionFilter});
         });
-        World.add(world, walls);
+        World.add(this.matterWorld, walls);
 
         this.spotToBodyMap = {};
         this.matterBodies = [];
@@ -221,19 +226,42 @@ class MaskRegion {
         //TODO - collision filtering (both between shapes, and creating random subsets within shapes for performance)
         //TODO - place letters closer inside (or move region walls out) so that letters dont pass thru walls on init or rounding error
         let letterBodies = this.spots.flat(1).map((spot, i) => {
-            let colFilt = {group: Math.random() < 0.5 ? 1 : 2}
+            let randSelect = arr => arr[Math.floor(Math.random()*arr.length)];
+            let cats = [0x1, 0x2, 0x4, 0x8];
+            let cat = cats[i%4];//randSelect(cats);
+            let colFilt = {mask: wallCat | cat, category: cat};
             let body = Bodies.rectangle(spot.x, spot.y, letterSize.x*ls, letterSize.y*ls, {isStatic: true, collisionFilter: colFilt});
             this.spotToBodyMap[i] = {spot, body};
             this.matterBodies.push(body);
             return body;
         });
-        World.add(world, letterBodies);
+        World.add(this.matterWorld, letterBodies);
         
     }
 
     addPoint(p){
         this.points.push(p);
         this.updateInternalPoints();
+    }
+
+    letterDraw(){
+        let spots = this.spots.flat(1).map((s, i) => ({i, s}));
+        if(this.activeAnimation){
+            let animationVal = this.activeAnimation.next();
+            if(!animationVal.done) spots = animationVal.value;
+        }
+
+        if(drawLetters) {
+            let txt = [];
+            spots.flat(1).forEach(spot => {
+                let char = this.text[(spot.i+this.textIndex)%this.text.length];
+                txt.push(char);
+                fill(0);
+                textSize(14);
+                text(char, spot.s.x, spot.s.y);
+                noFill();
+            });
+        }    
     }
 
     draw() {
@@ -262,23 +290,7 @@ class MaskRegion {
             noFill();
         }
 
-        let spots = this.spots.flat(1).map((s, i) => ({i, s}));
-        if(this.activeAnimation){
-            let animationVal = this.activeAnimation.next();
-            if(!animationVal.done) spots = animationVal.value;
-        }
-
-        if(drawLetters) {
-            let txt = [];
-            spots.flat(1).forEach(spot => {
-                let char = sampleText[(spot.i+this.textIndex)%this.text.length];
-                txt.push(char);
-                fill(0);
-                textSize(14);
-                text(char, spot.s.x, spot.s.y);
-                noFill();
-            });
-        }    
+        this.letterDraw();
     }
 }
 

@@ -113,9 +113,9 @@ function* useMatterPos(region, duration){
     let spots = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].spot).map(s => createVector(s.x, s.y));
     let bodies = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].body);
     let keys = Object.keys(region.spotToBodyMap);
-    let timeElapsed = 0;
+    let elapsedTime = 0;
     let startTime = now();
-    while(duration == null || elapsedTime < startTime){
+    while(duration == null || elapsedTime < duration){
         elapsedTime = now() - startTime;
         let s = sinN(now());
         yield bodies.map((bod, i) => {
@@ -137,40 +137,46 @@ function* explodeAndRestore(region, dropTime, restoreTime){
     let startTime = now();
     let spots = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].spot).map(s => createVector(s.x, s.y));
     let bodies = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].body);
-    let matterGen = useMatterPos(region);
+    // let matterGen = useMatterPos(region);
     let state = "drop"; //drop vs lift
     let elapsedTime = (now()-startTime) % (dropTime+restoreTime);
     while(true){
-        elapsedTime = (now()-startTime) % (dropTime+restoreTime);
-
-        region.startRunner();
-
-        while(elapsedTime <= dropTime){
-            elapsedTime = (now()-startTime) % (dropTime+restoreTime);
-            yield matterGen.next().value;
-        }
+        yield* useMatterPos(region, dropTime);
 
         region.stopRunner();
 
-        while(elapsedTime > dropTime){ //i.e., the mod value hasn't wrapped over and the restoreTime isn't finished
-            elapsedTime = (now()-startTime) % (dropTime+restoreTime);
-            let lerpVal = (elapsedTime - dropTime)/restoreTime
-            yield bodies.map((bod, i) => {
-                let bodVec = createVector(bod.position.x, bod.position.y);
-                return {i, s: p5.Vector.lerp(bodVec, spots[i], lerpVal)};
-            });
-        }
+        yield* lerpTask(bodies, spots, restoreTime);
 
-        region.restoreBodies();
+        region.restoreSpotBodies();
+        region.startRunner();
+    }
+}
+
+function* lerpTask(bodies, spots, runtime){
+    let startTime = now();
+    let elapsedTime = 0;
+    while(elapsedTime < runtime){
+        let lerpVal = elapsedTime/runtime;
+        yield bodies.map((bod, i) => {
+            let bodVec = createVector(bod.position.x, bod.position.y);
+            return {i, s: p5.Vector.lerp(bodVec, spots[i], lerpVal)};
+        });
+        elapsedTime = now() - startTime;
     }
 }
 
 function activateDropAndRaise(regionIndex, dropTime, restoreTime){
     let region = regions[regionIndex];
     region.updateMatterWorldFromSpots();
-    Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
     region.activeAnimation = explodeAndRestore(region, dropTime, restoreTime);
+    Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
 }
+
+
+
+
+
+
 
 function* createGesture(timeStart, duration, timeFunc, motionFunc){
     let timeDiff = timeFunc() - timeStart;
