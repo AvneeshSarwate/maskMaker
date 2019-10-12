@@ -35,9 +35,9 @@ function isAnythingActive(){
 let font;
 
 function setup() {
-  createCanvas(1000, 1000);
+  createCanvas(window.screen.width, window.screen.height);
   textFont("Courier New");
-  // meter = new FPSMeter(document.body);
+  meter = new FPSMeter(document.body);
 }
 
 let runHookIn = false;
@@ -68,7 +68,7 @@ function draw() {
     fill(255);
     textSize(12);
     text(state, 10, 900);
-    // meter.tick();
+    meter.tick();
 
     if(runHookIn) drawLoopHookIn();
 }
@@ -77,7 +77,7 @@ function draw() {
 //you have to explicitly EXIT some interaction state (grabbibg, drawing) before you can enter another
 //this is enforced by code 
 function keyPressed() {
-    if(key === "D"){
+    if(key === "d"){
         if(!isAnythingActive()) {
             let newRegion = new MaskRegion(regionCount);
             newRegion.active = true;
@@ -94,7 +94,7 @@ function keyPressed() {
             region.addPoint(new createVector(mouseX, mouseY));
         }
     }
-    if(key === "G"){
+    if(key === "g"){
         Object.values(regions).forEach(r => {r.active = false});
         state = "Moving existing point";
         let grabbedRegion, grabbedPointIndex;
@@ -114,7 +114,7 @@ function keyPressed() {
         grabbedRegion.active = true;
     }
 
-    if(key === "P"){
+    if(key === "p"){
         let activeRegion = Object.values(regions).filter(r => r.active)[0];
         activeRegion.points[activeRegion.grabbedPoint] = createVector(mouseX, mouseY);
         activeRegion.updateInternalPoints();
@@ -123,13 +123,25 @@ function keyPressed() {
         state = "Nothing active"
     }
     if(keyCode == 13){
-        let fs = fullscreen();
-        fullscreen(!fs); 
+        if(!window.screenTop && !window.screenY)
+            {
+                if (document.exitFullscreen) 
+                    document.exitFullscreen();
+                else if (document.mozCancelFullScreen) 
+                   document.mozCancelFullScreen();
+                else if (document.webkitExitFullscreen) 
+                   document.webkitExitFullscreen();
+            } else {
+                if (document.body.requestFullScreen)
+                    canvas.requestFullScreen();
+                else if (document.body.mozRequestFullScreen)
+                    canvas.mozRequestFullScreen();
+                else if (document.body.webkitRequestFullScreen){
+                    canvas.webkitRequestFullScreen();
+                    console.log("trying fullscreen");
+                }
+            }
     }
-
-}
-
-function keyReleased() {
 
 }
 
