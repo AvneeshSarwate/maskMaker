@@ -170,6 +170,7 @@ class MaskRegion {
         this.animationDraw = () => null;
         this.fontSize = 14;
         this.sizeWarp = a => a;
+        this.posWarp = a => a;
     }
 
     drawWhileAddingPoint(){
@@ -190,6 +191,7 @@ class MaskRegion {
     updateInternalPoints() {
         this.spots = generateLetterRoots(this);
         this.spotsFlat = this.spots.flat(1);
+        this.spotsToWordSlots();
     }
 
     stopRunner(){
@@ -209,6 +211,7 @@ class MaskRegion {
     }
 
     spotsToWordSlots(spots){
+        if(!this.spots || !this.spots.length || !this.spots.length > 0) return;
         spots = spots ? spots : this.spots;
         let tracker = [];
         this.rowMap = tracker;
@@ -247,26 +250,29 @@ class MaskRegion {
             let xp = 10; //expander
             let mid = {x: (p1.x+p2.x)/2, y: (p1.y+p2.y+xp)/2};
             let path = [p1.x, p1.y, p1.x+xp, p1.y+xp, p2.x+xp, p2.y+xp, p2.x, p2.y].join(" ");
-            return Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true, restitution: 0.9, collisionFilter});
+            return Matter.Bodies.fromVertices(mid.x, mid.y, Matter.Vertices.fromPath(path), {isStatic: true, restitution: 0.9, collisionFilter});
         });
-        World.add(this.matterWorld, walls);
+        Matter.World.add(this.matterWorld, walls);
 
         let words = this.text.split(" ").map(w => w+" ");
         let wordBodies = [];
+        this.spotToBodyMap = {};
         words.forEach((w, i) => {
             let pos = this.spots[this.wordPos[i].row][this.wordPos[i].col];
-            let tw = textWidth(w, 14);
+            let tw = textWidth(w, this.fontSize);
             let body = Matter.Bodies.rectangle(pos.x+tw/2, pos.y+letterSize.y/2, textWidth*letterScale, letterSize.y*letterScale);
-            wordBodies.push(body)
-        })
-        World.add(this.matterWorld, wordBodies);
+            wordBodies.push(body);
+            this.spotToBodyMap[i] = {spot: pos, body};
+        });
+        this.matterBodies = wordBodies;
+        Matter.World.add(this.matterWorld, wordBodies);
     }
 
     wordDraw() {
         let wordToPos = i => this.spots[this.wordPos[i].row][this.wordPos[i].col];
         if(this.activeAnimation){
             let animationVal = this.activeAnimation.next();
-            if(!animationVal.done) wordToPos = i => animationVal.value[i];
+            if(!animationVal.done) wordToPos = i => animationVal.value[i].s;
         }
 
         let words = this.text.split(" ").map(w => w+" ");
@@ -372,9 +378,15 @@ class MaskRegion {
                 let char = this.text[(spot.i+this.textIndex)%this.text.length];
                 txt.push(char);
                 textSize(this.sizeWarp(this.fontSize, i));
-                text(char, spot.s.x, spot.s.y);
+                let pos = this.posWarp(spot.s);
+                text(char, pos.x, pos.y);
             });
         }    
+    }
+
+    updateFontSize(size){
+        this.fontSize = fontSize;
+        this.updateInternalPoints();
     }
 
     draw() {

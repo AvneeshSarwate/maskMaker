@@ -135,7 +135,7 @@ function activateMatterAnimation(regionIndex){
 }
 
 function bumpVelocities(bodies, velFunc){
-    bodies.forEach(b => Matter.Body.setVelocity(b, velFunc));
+    bodies.forEach(b => Matter.Body.setVelocity(b, velFunc()));
 }
 
 let rnd = n => (Math.random()-0.5)*2*(n?n:1);
@@ -149,10 +149,26 @@ function activateMatterWander(regionIndex){
     region.matterBodies.forEach(b => {
         b.airFriction = 0;
         b.friction = 0;
+        b.collisionFilter.group = -1;
         Matter.Body.setVelocity(b, randVel(5));
     });
     region.matterWorld.gravity.scale = 0;
     Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
+}
+
+function activateWordWander(regionIndex){
+    let region = regions[regionIndex];
+    region.animationDraw = region.wordDraw;
+    region.createWordBodies();
+    region.activeAnimation = useMatterPos(region);
+    region.matterBodies.forEach(b => {
+        b.airFriction = 0;
+        b.friction = 0;
+        b.collisionFilter.group = -1;
+        Matter.Body.setVelocity(b, randVel(5));
+    });
+    region.matterWorld.gravity.scale = 0;
+    region.matterBodies.map(b => Matter.Body.setStatic(b, false));
 }
 
 //TODO rewrite this by adding duration parameter to updateMatterPos, and creating a lerp generator
