@@ -192,6 +192,7 @@ class MaskRegion {
         this.spots = generateLetterRoots(this);
         this.spotsFlat = this.spots.flat(1);
         this.spotsToWordSlots();
+        this.bbox = getBBox(this);
     }
 
     stopRunner(){
@@ -378,7 +379,7 @@ class MaskRegion {
                 let char = this.text[(spot.i+this.textIndex)%this.text.length];
                 txt.push(char);
                 textSize(this.sizeWarp(this.fontSize, i));
-                let pos = this.posWarp(spot.s);
+                let pos = this.posWarp(spot.s, i);
                 text(char, pos.x, pos.y);
             });
         }    
@@ -431,5 +432,10 @@ function rangeWarp(openRange, sizeDiff, cycleTime){
 
         return start <= letterInd && letterInd <= start+openRange ? fontSize+sizeDiff : fontSize
     }
+}
+
+function vertSine(pos, i){
+    let vec = {x: pos.x, y: pos.y+sinN(now()+i/3*PI)*20};
+    return isPointInternal(vec, this, this.bbox) ? vec : pos;
 }
 
