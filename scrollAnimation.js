@@ -76,7 +76,7 @@ function* letterGravity(startPos, dropDelay, finishFunc){
 
 function* dropAndScroll(region, textContentUpdate){
     while(true){
-        let lastLineLen = region.spots.slice(-1)[0].length;
+        let lastLineLen = Math.max(region.spots.slice(-1)[0].length, region.spots[0].length);
         
         yield* dropLetters(region, lastLineLen);
         textContentUpdate();
@@ -132,8 +132,29 @@ function activateMatterAnimation(regionIndex){
     region.updateMatterWorldFromSpots();
     region.activeAnimation = useMatterPos(region);
     Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
-
 }
+
+function bumpVelocities(bodies, velFunc){
+    bodies.forEach(b => Matter.Body.setVelocity(b, velFunc));
+}
+
+let rnd = n => (Math.random()-0.5)*2*(n?n:1);
+let randVel = n => ({x: rnd(n), y: rnd(n)});
+
+function activateMatterWander(regionIndex){
+    let region = regions[regionIndex];
+    region.animationDraw = region.letterDraw;
+    region.updateMatterWorldFromSpots();
+    region.activeAnimation = useMatterPos(region);
+    region.matterBodies.forEach(b => {
+        b.airFriction = 0;
+        b.friction = 0;
+        Matter.Body.setVelocity(b, randVel(5));
+    });
+    region.matterWorld.gravity.scale = 0;
+    Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
+}
+
 //TODO rewrite this by adding duration parameter to updateMatterPos, and creating a lerp generator
 function* explodeAndRestore(region, dropTime, restoreTime, hangTime){
     let startTime = now();

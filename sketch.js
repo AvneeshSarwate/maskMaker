@@ -11,7 +11,7 @@ let useMatrix = false;
 let matrixVal = [1, 0, 0,
               0, 1, 0];
 
-let matterObjs = []; //{runner, world, engine}
+let matterObjs = {}; //{runner, world, engine}
 
 let letterScale = 0.5; //scale down letter size to give them space to move
 
@@ -28,6 +28,13 @@ function killRegion(ind){
     delete regions[ind];
 }
 
+function killMatterObj(ind){
+    let matterStuff = matterObjs[ind];
+    Matter.Runner.stop(matterStuff.runner);
+    Matter.World.clear(matterStuff.world);
+    Matter.Engine.clear(matterStuff.engine);
+}
+
 function isAnythingActive(){
     return Object.values(regions).some(r => r.active);
 }
@@ -37,6 +44,7 @@ let font;
 function setup() {
   createCanvas(window.screen.width, window.screen.height);
   textFont("Courier New");
+  // textStyle(BOLD);
   meter = new FPSMeter(document.body);
 }
 
@@ -161,6 +169,7 @@ class MaskRegion {
         this.matterLerp = 1;
         this.animationDraw = () => null;
         this.fontSize = 14;
+        this.sizeWarp = a => a;
     }
 
     drawWhileAddingPoint(){
@@ -180,6 +189,7 @@ class MaskRegion {
 
     updateInternalPoints() {
         this.spots = generateLetterRoots(this);
+        this.spotsFlat = this.spots.flat(1);
     }
 
     stopRunner(){
@@ -262,7 +272,7 @@ class MaskRegion {
         let words = this.text.split(" ").map(w => w+" ");
         words.forEach((w, i) => {
             let pos = wordToPos(i);
-            textSize(14);
+            textSize(this.fontSize);
             text(w, pos.x, pos.y);
         });
     }
@@ -299,7 +309,7 @@ class MaskRegion {
 
         this.matterWorld = world;
         // world.bounds = { min: { x: 0, y: 0 }, max: { x: width, y: height } };
-        matterObjs.push({runner: this.matterRunner, world: this.matterWorld, engine: this.matterEngine});
+        matterObjs[this.id] = {runner: this.matterRunner, world: this.matterWorld, engine: this.matterEngine};
     }
 
 
@@ -333,7 +343,7 @@ class MaskRegion {
         let letterBodies = this.spots.flat(1).map((spot, i) => {
             let cats = [0x1, 0x2, 0x4, 0x8];
             let cat = randSelect(cats);
-            let colFilt = {mask: wallCat | cat, category: cat, group: 0-cat};
+            let colFilt = {mask: wallCat | cat, category: cat, group: -1};
             let body = Bodies.rectangle(spot.x, spot.y, letterSize.x*ls, letterSize.y*ls, {isStatic: true, collisionFilter: colFilt});
             this.spotToBodyMap[i] = {spot, body};
             this.matterBodies.push(body);
@@ -358,10 +368,10 @@ class MaskRegion {
 
         if(drawLetters) {
             let txt = [];
-            spots.flat(1).forEach(spot => {
+            spots.flat(1).forEach((spot, i) => {
                 let char = this.text[(spot.i+this.textIndex)%this.text.length];
                 txt.push(char);
-                textSize(this.fontSize);
+                textSize(this.sizeWarp(this.fontSize, i));
                 text(char, spot.s.x, spot.s.y);
             });
         }    
@@ -399,6 +409,15 @@ class MaskRegion {
             text(this.id, center.x/numPts, center.y/numPts);
         }
         this.animationDraw();
+    }
+}
+
+function rangeWarp(openRange, sizeDiff, cycleTime){
+    return function(fontSize, letterInd){
+        let numLetters = this.spotsFlat.length;
+        let start = Math.floor(((now()/cycleTime) %1) * numLetters);
+
+        return start <= letterInd && letterInd <= start+openRange ? fontSize+sizeDiff : fontSize
     }
 }
 
