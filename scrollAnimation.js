@@ -87,6 +87,7 @@ function* dropAndScroll(region, textContentUpdate){
 
 function activateDropAndScroll(regionIndex){
     let region = regions[regionIndex];
+    region.animationDraw = region.letterDraw;
     region.activeAnimation = dropAndScroll(region, () => {region.textIndex += region.spots.slice(-1)[0].length})
 }
 
@@ -127,13 +128,14 @@ function* useMatterPos(region, duration){
 
 function activateMatterAnimation(regionIndex){
     let region = regions[regionIndex];
+    region.animationDraw = region.letterDraw;
     region.updateMatterWorldFromSpots();
     region.activeAnimation = useMatterPos(region);
     Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));
 
 }
 //TODO rewrite this by adding duration parameter to updateMatterPos, and creating a lerp generator
-function* explodeAndRestore(region, dropTime, restoreTime){
+function* explodeAndRestore(region, dropTime, restoreTime, hangTime){
     let startTime = now();
     let spots = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].spot).map(s => createVector(s.x, s.y));
     let bodies = Object.keys(region.spotToBodyMap).map(i => region.spotToBodyMap[i].body);
@@ -148,7 +150,17 @@ function* explodeAndRestore(region, dropTime, restoreTime){
         yield* lerpTask(bodies, spots, restoreTime);
 
         region.restoreSpotBodies();
+
+        yield* idleYield(2, spots.map((s, i)=>({s, i})));
+
         region.startRunner();
+    }
+}
+
+function* idleYield(waitTime, yieldVal){
+    let startTime = now();
+    while(now() - startTime < waitTime) {
+        yield yieldVal;
     }
 }
 
@@ -167,6 +179,7 @@ function* lerpTask(bodies, spots, runtime){
 
 function activateDropAndRaise(regionIndex, dropTime, restoreTime){
     let region = regions[regionIndex];
+    region.animationDraw = region.letterDraw;
     region.updateMatterWorldFromSpots();
     region.activeAnimation = explodeAndRestore(region, dropTime, restoreTime);
     Object.values(region.spotToBodyMap).map(v => Matter.Body.setStatic(v.body, false));

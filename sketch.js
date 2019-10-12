@@ -11,10 +11,21 @@ let useMatrix = false;
 let matrixVal = [1, 0, 0,
               0, 1, 0];
 
+let matterObjs = []; //{runner, world, engine}
 
 let letterScale = 0.5; //scale down letter size to give them space to move
 
 let meter;
+
+
+function killRegion(ind){
+    let matterStuff = matterObjs[ind];
+    Matter.Runner.stop(matterStuff.runner);
+    Matter.World.clear(matterStuff.world);
+    Matter.Engine.clear(matterStuff.engine);
+
+    delete regions[ind];
+}
 
 function isAnythingActive(){
     return Object.values(regions).some(r => r.active);
@@ -126,6 +137,7 @@ class MaskRegion {
         this.text = text ? text : sampleText;
         this.matterWorld = null;
         this.matterLerp = 1;
+        this.animationDraw = () => null;
     }
 
     drawWhileAddingPoint(){
@@ -194,8 +206,8 @@ class MaskRegion {
         Matter.Runner.run(runner, engine);
 
         this.matterWorld = world;
+        matterObjs.push({runner: this.matterRunner, world: this.matterWorld, engine: this.matterEngine});
     }
-
 
 
     updateMatterWorldFromSpots(){
@@ -228,7 +240,7 @@ class MaskRegion {
         let letterBodies = this.spots.flat(1).map((spot, i) => {
             let randSelect = arr => arr[Math.floor(Math.random()*arr.length)];
             let cats = [0x1, 0x2, 0x4, 0x8];
-            let cat = cats[i%4];//randSelect(cats);
+            let cat = randSelect(cats);
             let colFilt = {mask: wallCat | cat, category: cat};
             let body = Bodies.rectangle(spot.x, spot.y, letterSize.x*ls, letterSize.y*ls, {isStatic: true, collisionFilter: colFilt});
             this.spotToBodyMap[i] = {spot, body};
@@ -290,7 +302,7 @@ class MaskRegion {
             noFill();
         }
 
-        this.letterDraw();
+        this.animationDraw();
     }
 }
 
