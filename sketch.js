@@ -17,6 +17,7 @@ let letterScale = 0.5; //scale down letter size to give them space to move
 
 let meter;
 
+let randSelect = arr => arr[Math.floor(Math.random()*arr.length)];
 
 function killRegion(ind){
     let matterStuff = matterObjs[ind];
@@ -36,7 +37,7 @@ let font;
 function setup() {
   createCanvas(1000, 1000);
   textFont("Courier New");
-  meter = new FPSMeter(document.body);
+  // meter = new FPSMeter(document.body);
 }
 
 let runHookIn = false;
@@ -67,7 +68,7 @@ function draw() {
     fill(255);
     textSize(12);
     text(state, 10, 900);
-    meter.tick();
+    // meter.tick();
 
     if(runHookIn) drawLoopHookIn();
 }
@@ -121,6 +122,10 @@ function keyPressed() {
         activeRegion.grabbedPoint = null;
         state = "Nothing active"
     }
+    if(keyCode == 13){
+        let fs = fullscreen();
+        fullscreen(!fs); 
+    }
 
 }
 
@@ -139,7 +144,7 @@ class MaskRegion {
         this.activeAnimation = null;
         this.animationState = null;
         this.textIndex = 0;
-        this.text = text ? text : sampleText;
+        this.text = text ? text : randSelect(quotes);
         this.matterWorld = null;
         this.matterLerp = 1;
         this.animationDraw = () => null;
@@ -314,7 +319,6 @@ class MaskRegion {
         //TODO - collision filtering (both between shapes, and creating random subsets within shapes for performance)
         //TODO - place letters closer inside (or move region walls out) so that letters dont pass thru walls on init or rounding error
         let letterBodies = this.spots.flat(1).map((spot, i) => {
-            let randSelect = arr => arr[Math.floor(Math.random()*arr.length)];
             let cats = [0x1, 0x2, 0x4, 0x8];
             let cat = randSelect(cats);
             let colFilt = {mask: wallCat | cat, category: cat, group: 0-cat};
@@ -354,6 +358,7 @@ class MaskRegion {
     draw() {
         fill(0);
         stroke(255);
+        strokeWeight(cursorSize);
         if(drawBoundary) {
             if(this.active){
                 if(this.grabbedPoint != null) this.drawWhileMovingPoint(); //want index-0 to be true
