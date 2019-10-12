@@ -31,6 +31,8 @@ function isAnythingActive(){
     return Object.values(regions).some(r => r.active);
 }
 
+let font;
+
 function setup() {
   createCanvas(1000, 1000);
   textFont("Courier New");
@@ -46,6 +48,9 @@ let time = 0;
 
 function draw() {
     clear();
+    background(0);
+    stroke(255);
+
 
     if(useMatrix) {
         resetMatrix();
@@ -54,13 +59,13 @@ function draw() {
 
     time = Date.now()/1000;
 
-    noFill();
     strokeWeight(cursorSize);
 
     Object.values(regions).forEach(r => r.draw())
     
-    fill(0);
-    textSize(this.fontSize);
+    stroke(0);
+    fill(255);
+    textSize(12);
     text(state, 10, 900);
     meter.tick();
 
@@ -240,10 +245,8 @@ class MaskRegion {
         let words = this.text.split(" ").map(w => w+" ");
         words.forEach((w, i) => {
             let pos = wordToPos(i);
-            fill(0);
             textSize(14);
             text(w, pos.x, pos.y);
-            noFill();
         });
     }
 
@@ -342,15 +345,15 @@ class MaskRegion {
             spots.flat(1).forEach(spot => {
                 let char = this.text[(spot.i+this.textIndex)%this.text.length];
                 txt.push(char);
-                fill(0);
                 textSize(this.fontSize);
                 text(char, spot.s.x, spot.s.y);
-                noFill();
             });
         }    
     }
 
     draw() {
+        fill(0);
+        stroke(255);
         if(drawBoundary) {
             if(this.active){
                 if(this.grabbedPoint != null) this.drawWhileMovingPoint(); //want index-0 to be true
@@ -367,15 +370,17 @@ class MaskRegion {
             center.add(p);
         })
 
+        fill(255);
+        stroke(0);
+        strokeWeight(0);
+
         if(drawIndex) {
             let numPts = this.points.length;
 
-            fill(0);
+
             textSize(24);
             text(this.id, center.x/numPts, center.y/numPts);
-            noFill();
         }
-
         this.animationDraw();
     }
 }
