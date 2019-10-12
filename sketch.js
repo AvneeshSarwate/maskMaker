@@ -60,7 +60,7 @@ function draw() {
     Object.values(regions).forEach(r => r.draw())
     
     fill(0);
-    textSize(14);
+    textSize(this.fontSize);
     text(state, 10, 900);
     meter.tick();
 
@@ -138,6 +138,7 @@ class MaskRegion {
         this.matterWorld = null;
         this.matterLerp = 1;
         this.animationDraw = () => null;
+        this.fontSize = 14;
     }
 
     drawWhileAddingPoint(){
@@ -186,7 +187,7 @@ class MaskRegion {
             }
         }
         let runningWord = [];
-        let words = this.text.split(" ");
+        let words = this.text.split(" ").map(w => w+" ");
 
         let rowInd = 0;
         let colInd = 0;
@@ -218,12 +219,27 @@ class MaskRegion {
         });
         World.add(this.matterWorld, walls);
 
-    }
-
-    wordDraw(){
-        let words = this.text.split(" ");
+        let words = this.text.split(" ").map(w => w+" ");
+        let wordBodies = [];
         words.forEach((w, i) => {
             let pos = this.spots[this.wordPos[i].row][this.wordPos[i].col];
+            let tw = textWidth(w, 14);
+            let body = Matter.Bodies.rectangle(pos.x+tw/2, pos.y+letterSize.y/2, textWidth*letterScale, letterSize.y*letterScale);
+            wordBodies.push(body)
+        })
+        World.add(this.matterWorld, wordBodies);
+    }
+
+    wordDraw() {
+        let wordToPos = i => this.spots[this.wordPos[i].row][this.wordPos[i].col];
+        if(this.activeAnimation){
+            let animationVal = this.activeAnimation.next();
+            if(!animationVal.done) wordToPos = i => animationVal.value[i];
+        }
+
+        let words = this.text.split(" ").map(w => w+" ");
+        words.forEach((w, i) => {
+            let pos = wordToPos(i);
             fill(0);
             textSize(14);
             text(w, pos.x, pos.y);
@@ -315,6 +331,7 @@ class MaskRegion {
 
     letterDraw(){
         let spots = this.spots.flat(1).map((s, i) => ({i, s}));
+        this.text = this.text.length < spots.length ? this.text.repeat(Math.ceil(spots.length/this.text.length)) : this.text;
         if(this.activeAnimation){
             let animationVal = this.activeAnimation.next();
             if(!animationVal.done) spots = animationVal.value;
@@ -326,7 +343,7 @@ class MaskRegion {
                 let char = this.text[(spot.i+this.textIndex)%this.text.length];
                 txt.push(char);
                 fill(0);
-                textSize(14);
+                textSize(this.fontSize);
                 text(char, spot.s.x, spot.s.y);
                 noFill();
             });

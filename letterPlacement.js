@@ -19,7 +19,10 @@ function getBBox(region){
 function generateLetterRoots(region){
     let bbox = getBBox(region);
     let spots = [];
-    let ls = letterSize;
+    let oldTextSize = textSize();
+    textSize(region.fontSize)
+    let ls = {x: textWidth("a"), y: textWidth("a")/courierRatio}; //letterSize;
+    textSize(oldTextSize);
     //switch x and y loop order
     for(let y = bbox.minY; y <= bbox.maxY; y += ls.y) { 
         let row = [];
