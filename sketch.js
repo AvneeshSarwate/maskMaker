@@ -42,7 +42,8 @@ function isAnythingActive(){
 let font;
 
 function setup() {
-  createCanvas(window.screen.width, window.screen.height);
+  // createCanvas(window.screen.width, window.screen.height);
+  createCanvas(500, 500);
   textFont("Courier New");
   // textStyle(BOLD);
   meter = new FPSMeter(document.body);
@@ -167,10 +168,12 @@ class MaskRegion {
         this.text = text ? text : randSelect(quotes);
         this.matterWorld = null;
         this.matterLerp = 1;
-        this.animationDraw = () => null;
+        this.animationDraw = this.fillDraw;
         this.fontSize = 14;
         this.sizeWarp = a => a;
         this.posWarp = a => a;
+        this.color = randColor();
+        this.strokeWeight = cursorSize;
     }
 
     drawWhileAddingPoint(){
@@ -391,7 +394,7 @@ class MaskRegion {
     }
 
     draw() {
-        fill(0);
+        noFill();
         stroke(255);
         strokeWeight(cursorSize);
         if(drawBoundary) {
@@ -423,6 +426,24 @@ class MaskRegion {
         }
         this.animationDraw();
     }
+
+    fillDraw(){
+        // fill(...this.color);
+        // beginShape();
+        // this.points.forEach(p => vertex(p.x, p.y));
+        // endShape(CLOSE);
+        if(this.activeAnimation){
+            let animationVal = this.activeAnimation.next();
+            if(!animationVal.done) {
+                let planeDraw = animationVal.value;
+                planeDraw();
+            }
+        }
+    }
+}
+
+function randColor(){
+   return [random(), random(), random()].map(r => r*256); 
 }
 
 function rangeWarp(openRange, sizeDiff, cycleTime){
@@ -446,3 +467,12 @@ function vertSine(pos, i){
     }
 }
 
+function rot(pos, i){
+    let dev = 20;
+    try {
+        let vec = {x: pos.x+cosN(now()+i/3*PI)*dev, y: pos.y+sinN(now()+i/3*PI)*dev};
+        return isPointInternal(vec, this, this.bbox) ? vec : pos;
+    } catch{
+        return pos;
+    }
+}
