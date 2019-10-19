@@ -4,10 +4,12 @@ var launchpadIn, launchpadOut, drawClock, timeFwdLoop, drawPort, lastHitTime, te
 launchpadIn = ~getLaunchpadIn.(0);
 launchpadOut = ~getLaunchpadOut.(0);
 launchpadOut.latency = 0;
-drawPort = NetAddr("127.0.0.1", 8083);
+drawPort = NetAddr("127.0.0.1", 5432);
 
-drawClock = TempoClock.new;
-refClock = TempoClock.new(1);
+drawClock = TempoClock.new(2);
+refClock = TempoClock.new;
+
+drawClock.sched(drawClock.timeToNextBeat, {drawPort.sendMsg("/drawBeat", drawClock.beats); 1});
 
 
 averagingTempo = false;

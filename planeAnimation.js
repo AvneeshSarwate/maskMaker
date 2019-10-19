@@ -1,6 +1,3 @@
-function connectOSC() {
-    osc.connect(address, port);
-}
 
 let drawTime = 0;
 
@@ -8,15 +5,24 @@ osc = new OSC({
     discardLateMessages: true
 });
 
+osc.connect('localhost', 8085);
+
 osc.on("/drawTime", (msg)=>{
-    drawTime = msg[0];
+    drawTime = msg.args[0];
 });
 
 let beatFunctions = [];
+let logBeat = false;
 osc.on("/drawBeat", (msg)=>{
     beatFunctions.forEach(f => f());
     beatFunctions = [];
+    if(logBeat) console.log("log beat", msg.args[0]);
 });
+
+osc.on("/phaseHit", (msg)=>{
+    console.log("phase hit");
+    retrigger()
+})
 
 let nowSC = () => drawTime;
 
@@ -55,7 +61,7 @@ function toBT(points){
 //points is [[p1, p2], [p3, p4]] where 1-2 and 3-4 are lerped (and all are already vectors)
 //set order of points to determine if it's left/right/up/down
 function* lineLerpGen(points, duration, region){
-    let startTIme = now();
+    let startTIme = nowSC();
     let elapsed = 0;
     while(elapsed < duration){
         yield () => {
@@ -70,14 +76,14 @@ function* lineLerpGen(points, duration, region){
 
             pop();
         }
-        elapsed = now() - startTIme;
+        elapsed = nowSC() - startTIme;
     }
 } 
 
 
 //same point order and directionality concerns as line-lerp, and filling var determines if its filling or emptying
 function* planeLerpGen(points, duration, region, filling=false){
-    let startTIme = now();
+    let startTIme = nowSC();
     let elapsed = 0;
     while(elapsed < duration){
         yield () => {
@@ -99,14 +105,14 @@ function* planeLerpGen(points, duration, region, filling=false){
 
             pop();
         }
-        elapsed = now() - startTIme;
+        elapsed = nowSC() - startTIme;
     }
 } 
 
 
 //out var determines if its zoom in or out. points are a flat list of vectors in hand-drawn order
 function* zoomLerpGen(points, duration, region, out=true){
-    let startTIme = now();
+    let startTIme = nowSC();
     let elapsed = 0;
     let sumPoint = points.reduce((p1, p2) => ({x: p1.x+p2.x, y: p1.y+p2.y}));
     let center = createVector(sumPoint.x/points.length, sumPoint.y/points.length);
@@ -125,7 +131,7 @@ function* zoomLerpGen(points, duration, region, out=true){
 
             pop();
         }
-        elapsed = now() - startTIme;
+        elapsed = nowSC() - startTIme;
     }
 } 
 
