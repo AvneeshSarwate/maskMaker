@@ -4,9 +4,21 @@ function connectOSC() {
 
 let drawTime = 0;
 
-osc.on("/drawTime" (msg)=>{
+osc = new OSC({
+    discardLateMessages: true
+});
+
+osc.on("/drawTime", (msg)=>{
     drawTime = msg[0];
 });
+
+let beatFunctions = [];
+osc.on("/drawBeat", (msg)=>{
+    beatFunctions.forEach(f => f());
+    beatFunctions = [];
+});
+
+let nowSC = () => drawTime;
 
 let lerp = p5.Vector.lerp;
 
@@ -117,6 +129,95 @@ function* zoomLerpGen(points, duration, region, out=true){
     }
 } 
 
+let regionKeys = {}
+'abcdefghijklmnopqrstuvwxyz'.split("").forEach((c, i) => {regionKeys[c]=i});
+
+let symbolToGesture = {"line": lineGen, "zoom": zoomGen};
+
+function parseGestureString(str){
+    let lines = str.split('\n');
+
+    let gestureMap = lines.map(l => {
+        let tokens = l.split(' ');
+        let delay = parseFloat(tokens[0]);
+        if(delay) tokens = tokens.slice(1);
+        let regionKey = tokens[0];
+        let regionInd = regionKeys[regionKey];
+
+        if(!regions[regionInd]){
+            console.log("No region with key", regionKey, "or ind", regionInd);
+            return;
+        }
+
+        let gestureChain = tokens.slice(1).map((token, i) => {
+            let subTokens = token.split("-");
+            let gesture = symbolToGesture[subTokens[0]];
+            if(!gesture){
+                console.log("no symbol", subTokens, "at pos", i, "for region", regionKey);
+                return;
+            }
+            let [duration, direction, repeats] = [parseFloat(subTokens[1]), subTokens[2], parseInt(subTokens[3])];
+            if(!(duration && repeats)){
+                console.log("duration and/or repeats  incorrect", "at pos", i, "for region", regionKey);
+                return
+            }
+            return gesture(regionInd, duration, direction, repeats);
+        });
+        return gestureChain.every(e => !!e) ? {region: regions[regionInd], chain: chain(gestureChain), string: l} : false;
+    });
+
+    if(gestureMap.every(e => !!e)){
+        console.log("congrats, it parses!");
+        let launchFunc = () => {
+            gestureChains.forEach(gc => {
+                gc.region.activeAnimation = gc.chain;
+                gc.region.lastGestureString = gc.string;
+            });
+        }
+        beatFunctions.push(launchFunc);
+    }
+}
+
+function lineGen(ind, duration, direction, repeats){
+    let region = regions[ind]
+    switch(direction){
+        case "lr":
+            return chain([() => lineLerpGen(toLR(region.points), duration, region)], repeats);
+        case "rl":
+            return chain([() => lineLerpGen(toRL(region.points), duration, region)], repeats);
+        case "tb":
+            return chain([() => lineLerpGen(toTB(region.points), duration, region)], repeats);
+        case "bt":
+            return chain([() => lineLerpGen(toTB(region.points), duration, region)], repeats);
+        case "vert":
+            return chain([() => lineLerpGen(toTB(region.points), duration, region), 
+                          () => lineLerpGen(toBT(region.points), duration, region)], repeats);
+        case "hor":
+            return chain([() => lineLerpGen(toLR(region.points), duration, region), 
+                          () => lineLerpGen(toRL(region.points), duration, region)], repeats);
+        default:
+            console.log("bad LINE direction:", direction, "for region", ind);
+            return
+    }
+}
+
+function zoomGen(ind, duration, direction, repeats){
+    let region = regions[ind];
+     switch(direction){
+        case "in":
+            return chain([() => zoomLerpGen(region.points, duration, region, false)], repeats);
+        case "out":
+            return chain([() => zoomLerpGen(region.points, duration, region, true)], repeats);
+        case "alt":
+            return chain([() => zoomLerpGen(region.points, duration, region, false), 
+                          () => zoomLerpGen(region.points, duration, region, true)], repeats);
+        default:
+            console.log("bad ZOOM direction:", direction);
+            return
+    }
+
+}
+
 //direction is 
 function lineLerp(ind, dur, direction, alternate=false, loop=false){
     let region = regions[ind];
@@ -168,7 +269,7 @@ line types - lr, rl, tb, bt, vert, hor
 zoom types - in, out, alt
 plane types - same as line but with an extra param fil, emp, alt for the fill type
 
-[delay] region animatation-duration-direction-otherstuff...
+[delay] region animatation-duration-direction-repeats-otherstuff...
 
 for alternating types the duration applies for each component, so total will be 2x as long
 
