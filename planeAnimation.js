@@ -1,4 +1,12 @@
+function connectOSC() {
+    osc.connect(address, port);
+}
 
+let drawTime = 0;
+
+osc.on("/drawTime" (msg)=>{
+    drawTime = msg[0];
+});
 
 let lerp = p5.Vector.lerp;
 
