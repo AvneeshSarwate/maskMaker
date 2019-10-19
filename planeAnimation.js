@@ -169,7 +169,7 @@ function parseGestureString(str){
     if(gestureMap.every(e => !!e)){
         console.log("congrats, it parses!");
         let launchFunc = () => {
-            gestureChains.forEach(gc => {
+            gestureMap.forEach(gc => {
                 gc.region.activeAnimation = gc.chain;
                 gc.region.lastGestureString = gc.string;
             });
@@ -178,23 +178,23 @@ function parseGestureString(str){
     }
 }
 
+String.prototype.run = function(){parseGestureString(this)};
+
 function lineGen(ind, duration, direction, repeats){
     let region = regions[ind]
     switch(direction){
         case "lr":
-            return chain([() => lineLerpGen(toLR(region.points), duration, region)], repeats);
+            return () => chain([() => lineLerpGen(toLR(region.points), duration, region)], repeats);
         case "rl":
-            return chain([() => lineLerpGen(toRL(region.points), duration, region)], repeats);
+            return () => chain([() => lineLerpGen(toRL(region.points), duration, region)], repeats);
         case "tb":
-            return chain([() => lineLerpGen(toTB(region.points), duration, region)], repeats);
+            return () => chain([() => lineLerpGen(toTB(region.points), duration, region)], repeats);
         case "bt":
-            return chain([() => lineLerpGen(toTB(region.points), duration, region)], repeats);
+            return () => chain([() => lineLerpGen(toTB(region.points), duration, region)], repeats);
         case "vert":
-            return chain([() => lineLerpGen(toTB(region.points), duration, region), 
-                          () => lineLerpGen(toBT(region.points), duration, region)], repeats);
+            return () => chain([() => lineLerpGen(toTB(region.points), duration, region), () => lineLerpGen(toBT(region.points), duration, region)], repeats);
         case "hor":
-            return chain([() => lineLerpGen(toLR(region.points), duration, region), 
-                          () => lineLerpGen(toRL(region.points), duration, region)], repeats);
+            return () => chain([() => lineLerpGen(toLR(region.points), duration, region), () => lineLerpGen(toRL(region.points), duration, region)], repeats);
         default:
             console.log("bad LINE direction:", direction, "for region", ind);
             return
@@ -205,12 +205,11 @@ function zoomGen(ind, duration, direction, repeats){
     let region = regions[ind];
      switch(direction){
         case "in":
-            return chain([() => zoomLerpGen(region.points, duration, region, false)], repeats);
+            return () => chain([() => zoomLerpGen(region.points, duration, region, false)], repeats);
         case "out":
-            return chain([() => zoomLerpGen(region.points, duration, region, true)], repeats);
+            return () => chain([() => zoomLerpGen(region.points, duration, region, true)], repeats);
         case "alt":
-            return chain([() => zoomLerpGen(region.points, duration, region, false), 
-                          () => zoomLerpGen(region.points, duration, region, true)], repeats);
+            return () => chain([() => zoomLerpGen(region.points, duration, region, false), () => zoomLerpGen(region.points, duration, region, true)], repeats);
         default:
             console.log("bad ZOOM direction:", direction);
             return
