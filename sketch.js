@@ -428,10 +428,6 @@ class MaskRegion {
     }
 
     fillDraw(){
-        // fill(...this.color);
-        // beginShape();
-        // this.points.forEach(p => vertex(p.x, p.y));
-        // endShape(CLOSE);
         if(this.activeAnimation){
             let animationVal = this.activeAnimation.next();
             if(!animationVal.done) {
@@ -439,6 +435,13 @@ class MaskRegion {
                 planeDraw();
             }
         }
+    }
+
+    colorDraw(){
+        fill(...this.color);
+        beginShape();
+        this.points.forEach(p => vertex(p.x, p.y));
+        endShape(CLOSE);
     }
 }
 

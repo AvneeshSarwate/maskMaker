@@ -122,7 +122,7 @@ function lineLerp(ind, dur, direction, alternate=false, loop=false){
     let region = regions[ind];
     if(alternate){
         let dirGen = dirFunc => () => lineLerpGen(dirFunc(region.points), dur, region);
-        region.activeAnimation = chainInf([dirGen(toLR), dirGen(toRL)]);
+        region.activeAnimation = chain([dirGen(toLR), dirGen(toRL)]);
     } else {
         if(loop){ 
             
@@ -141,7 +141,7 @@ function zoomLerp(ind, dur, out=true, alternate=false, loop=false){
     let region = regions[ind];
     if(alternate){
         let dirGen = dirVal => () => zoomLerpGen(region.points, dur, region, dirVal);
-        region.activeAnimation = chainInf([dirGen(true), dirGen(false)]);
+        region.activeAnimation = chain([dirGen(true), dirGen(false)]);
     } else {
         if(loop){
 
@@ -153,9 +153,9 @@ function zoomLerp(ind, dur, out=true, alternate=false, loop=false){
 
 
 //array of () => generatorCreatior(...)
-function* chainInf(genDefs){
+function* chain(genDefs, reps=Infinity){
     let ind = 0;
-    while(true){
+    while(ind < reps){
         let gen = genDefs[ind%genDefs.length]();
         yield* gen
         ind++
@@ -163,6 +163,41 @@ function* chainInf(genDefs){
 }
 
 
+/*
+line types - lr, rl, tb, bt, vert, hor
+zoom types - in, out, alt
+plane types - same as line but with an extra param fil, emp, alt for the fill type
 
+[delay] region animatation-duration-direction-otherstuff...
+
+for alternating types the duration applies for each component, so total will be 2x as long
+
+add prototype func to String object called "run()" to make it quicker to execute
+
+add an extra "beat" OSC message that launches all of the queued up animations
+
+
+POTENTIAL ISSUE - drift due to gesture durations not being exact in JS
+- since "transport-time" is coming from SC and is correct, you could save the start time
+  of a gesture group, and when it loops back around, look at the predicted end time vs actual end time
+  and add a correction term (which could swing positive or negative) to a locally defined version of now(). 
+  Drift should be small enough that doing a correction  at the end of each gesture group isn't noticable
+- alternately, have gestures calculate their "scheduled" end time in relation to the transport time, not
+  just their local elapsed time (the genDef functions in chain can take a time arg to allow calculating).
+  This could be clean-ish because ideally chain() is only created on a whole beat, and a gesture group has
+  a knowable duration beforehand
+
+================================================================
+================================================================
+
+NICE TO HAVES
+
+- be able to save string from javascript to launchpad, and have it light up the button.
+- pressing the button while some "alt" key is held down will print the string to the console
+
+create a special func for making a random-direction fil-empty alternator for planes
+- eg, alternates between vert/hor fill/empty, but which side of the vert or hor is random
+
+*/
 
 
