@@ -26,10 +26,18 @@ osc.on("/phaseHit", (msg)=>{
 
 let stringBanks = {};
 osc.on("/bankHit", (msg)=>{
-    if(stringBanks[msg.args[0]]){
-        stringBanks[msg.args[0]].run();
+    let bankString = stringBanks[msg.args[0]];
+    if(bankString){
+        console.log('loading bank', )
+        bankString.run();
     }
 })
+
+function saveBank(bankInd, bankStr){
+    stringBanks[bankInd] = bankStr;
+    let message = new OSC.Message('bankSave', bankInd);
+    osc.send(message);
+}
 
 
 let nowSC = () => drawTime;

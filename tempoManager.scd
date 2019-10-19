@@ -66,6 +66,10 @@ MIDIFunc.noteOn({|vel, note, chan, port|
     drawPort.sendMsg("/bankHit", note);
 });
 
+OSCFunc({|msg, time, addr, recvPort|
+    launchpadOut.noteOn(0, msg[1], 64);
+    ["BANK SAVE", msg].postln;
+}, "/bankSave");
 
 timeFwdLoop = Pbind(
     \delta, 1/60,
@@ -73,6 +77,8 @@ timeFwdLoop = Pbind(
 ).play;
 
 )
+
+OSCFunc.trace
 
 a.mean
 a = [1,2,3,4]
