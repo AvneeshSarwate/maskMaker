@@ -180,6 +180,8 @@ function parseGestureString(str){
 
 String.prototype.run = function(){parseGestureString(this)};
 
+let retrigger = () => Object.values(regions).forEach(r => r.lastGestureString.run());
+
 function lineGen(ind, duration, direction, repeats){
     let region = regions[ind]
     switch(direction){
