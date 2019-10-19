@@ -135,7 +135,7 @@ let regionKeys = {}
 let symbolToGesture = {"line": lineGen, "zoom": zoomGen};
 
 function parseGestureString(str){
-    let lines = str.split('\n');
+    let lines = str.split('\n').filter(s => /\S/.test(s));
 
     let gestureMap = lines.map(l => {
         let tokens = l.split(' ');
