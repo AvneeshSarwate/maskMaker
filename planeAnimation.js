@@ -21,8 +21,16 @@ osc.on("/drawBeat", (msg)=>{
 
 osc.on("/phaseHit", (msg)=>{
     console.log("phase hit");
-    retrigger()
+    beatFunctions.push(retrigger)
 })
+
+let stringBanks = {};
+osc.on("/bankHit", (msg)=>{
+    if(stringBanks[msg.args[0]]){
+        stringBanks[msg.args[0]].run();
+    }
+})
+
 
 let nowSC = () => drawTime;
 

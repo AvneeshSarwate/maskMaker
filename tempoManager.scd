@@ -32,7 +32,7 @@ MIDIFunc.cc({|vel, note, chan, port|
             launchpadOut.noteOn(0, tempoRecord_BUTTON, col);
             interOnsetList = List.new;
         });
-        if(note == tempo_BUTTON, {
+        if((note == tempo_BUTTON) && averagingTempo, {
             var delta = refClock.beats - lastHitTime;
             if(delta < 1){
                 var noOutliers, median, avgDelta;
@@ -60,10 +60,11 @@ MIDIFunc.cc({|vel, note, chan, port|
             ["PHASE HIT", tempo*60].postln;
         });
     })
-
-
-
 }, nil, nil, launchpadIn.uid);
+
+MIDIFunc.noteOn({|vel, note, chan, port|
+    drawPort.sendMsg("/bankHit", note);
+});
 
 
 timeFwdLoop = Pbind(
