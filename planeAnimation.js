@@ -132,7 +132,11 @@ function* zoomLerpGen(points, duration, region, out=true){
 let regionKeys = {}
 'abcdefghijklmnopqrstuvwxyz'.split("").forEach((c, i) => {regionKeys[c]=i});
 
-let symbolToGesture = {"line": lineGen, "zoom": zoomGen};
+let symbolToGesture = {"line": lineGen, "zoom": zoomGen, "plane": planeGen};
+
+String.prototype.run = function(){parseGestureString(this)};
+
+let retrigger = () => Object.values(regions).forEach(r => r.lastGestureString.run());
 
 function parseGestureString(str){
     let lines = str.split('\n').filter(s => /\S/.test(s));
@@ -178,10 +182,6 @@ function parseGestureString(str){
     }
 }
 
-String.prototype.run = function(){parseGestureString(this)};
-
-let retrigger = () => Object.values(regions).forEach(r => r.lastGestureString.run());
-
 function lineGen(ind, duration, direction, repeats){
     let region = regions[ind]
     switch(direction){
@@ -192,7 +192,7 @@ function lineGen(ind, duration, direction, repeats){
         case "tb":
             return () => chain([() => lineLerpGen(toTB(region.points), duration, region)], repeats);
         case "bt":
-            return () => chain([() => lineLerpGen(toTB(region.points), duration, region)], repeats);
+            return () => chain([() => lineLerpGen(toBT(region.points), duration, region)], repeats);
         case "vert":
             return () => chain([() => lineLerpGen(toTB(region.points), duration, region), () => lineLerpGen(toBT(region.points), duration, region)], repeats);
         case "hor":
@@ -216,7 +216,28 @@ function zoomGen(ind, duration, direction, repeats){
             console.log("bad ZOOM direction:", direction);
             return
     }
+}
 
+function planeGen(ind, duration, direction, repeats){
+    let region = regions[ind];
+    if(!["lf", "rf", "tf", "bf", "le", "re", "te", "be"].includes(direction)){
+        console.log("bad PLANE direction:", direction, "for region", ind);
+        return
+    }
+    let filling = direction[1] === "f";
+    switch(direction[0]){
+        case "l":
+            return () => chain([() => planeLerpGen(toLR(region.points), duration, region, filling)], repeats);
+        case "r":
+            return () => chain([() => planeLerpGen(toRL(region.points), duration, region, filling)], repeats);
+        case "t":
+            return () => chain([() => planeLerpGen(toTB(region.points), duration, region, filling)], repeats);
+        case "b":
+            return () => chain([() => planeLerpGen(toBT(region.points), duration, region, filling)], repeats);
+        default:
+            console.log("bad PLANE direction:", direction, "for region", ind);
+            return
+    }
 }
 
 //direction is 
@@ -268,7 +289,8 @@ function* chain(genDefs, reps=Infinity){
 /*
 line types - lr, rl, tb, bt, vert, hor
 zoom types - in, out, alt
-plane types - same as line but with an extra param fil, emp, alt for the fill type
+plane types - 2 characters, lrtb as first char and fe as second - 8 types in total
+    - the lrtb is short for lr rl tb bt like line types, fe is fill or empty
 
 [delay] region animatation-duration-direction-repeats-otherstuff...
 
