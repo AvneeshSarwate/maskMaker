@@ -47,7 +47,7 @@ function toTB(points){
     return [[tl, bl], [tr, br]];
 }
 
-function toTB(points){
+function toBT(points){
     let [tl, bl, br, tr] = points;
     return [[bl, tl], [br, tr]];
 }
@@ -255,7 +255,7 @@ function zoomLerp(ind, dur, out=true, alternate=false, loop=false){
 //array of () => generatorCreatior(...)
 function* chain(genDefs, reps=Infinity){
     let ind = 0;
-    while(ind < reps){
+    while(ind < reps*genDefs.length){
         let gen = genDefs[ind%genDefs.length]();
         yield* gen
         ind++
