@@ -149,12 +149,23 @@ function* zoomLerpGen(points, duration, region, out=true){
         }
         elapsed = nowSC() - startTIme;
     }
+}
+
+function* waitLerpGen(duration){
+    let startTIme = nowSC();
+    let elapsed = 0;
+    while(elapsed < duration){
+        yield () => {
+            return;
+        }
+        elapsed = nowSC() - startTIme;
+    }
 } 
 
 let regionKeys = {}
 'abcdefghijklmnopqrstuvwxyz'.split("").forEach((c, i) => {regionKeys[c]=i});
 
-let symbolToGesture = {"line": lineGen, "zoom": zoomGen, "plane": planeGen};
+let symbolToGesture = {"line": lineGen, "zoom": zoomGen, "plane": planeGen, "wait": waitGen};
 
 String.prototype.run = function(){parseGestureString(this)};
 
@@ -223,6 +234,11 @@ function lineGen(ind, duration, direction, repeats){
             console.log("bad LINE direction:", direction, "for region", ind);
             return
     }
+}
+
+function waitGen(ind, duration, direction, repeats){
+    let region = regions[ind]
+    return () => chain([() => waitLerpGen(duration)], repeats);
 }
 
 function zoomGen(ind, duration, direction, repeats){
@@ -338,8 +354,11 @@ POTENTIAL ISSUE - drift due to gesture durations not being exact in JS
 
 NICE TO HAVES
 
-- be able to save string from javascript to launchpad, and have it light up the button.
-- pressing the button while some "alt" key is held down will print the string to the console
+have a row of circle buttons that are mapped to animation patterns and 
+a row of buttons mapped to regions. When you hold down the button of a pattern,
+any button hit of a region button will cause that region to play that pattern.
+can dynamically remap what patterns/regions are mapped to 8 circles on launchpad
+
 
 create a special func for making a random-direction fil-empty alternator for planes
 - eg, alternates between vert/hor fill/empty, but which side of the vert or hor is random

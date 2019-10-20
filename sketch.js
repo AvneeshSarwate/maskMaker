@@ -42,8 +42,8 @@ function isAnythingActive(){
 let font;
 
 function setup() {
-  // createCanvas(window.screen.width, window.screen.height);
-  createCanvas(500, 500);
+  createCanvas(window.screen.width/2, window.screen.height/2);
+  // createCanvas(500, 500);
   textFont("Courier New");
   // textStyle(BOLD);
   meter = new FPSMeter(document.body);
@@ -479,3 +479,56 @@ function rot(pos, i){
         return pos;
     }
 }
+
+function setColors(c1, c2, dim=1){
+    if(colors[c1] && colors[c2]){
+        Object.keys(regions).forEach(k =>{
+            if(k % 2 == 0) regions[k].color = colors[c1].map(c => c*dim)
+            else regions[k].color = colors[c2].map(c => c*dim)
+        })
+    } else {
+        console.log("nonexistent color")
+    }
+}
+
+function getRegionDefs(){
+    return Object.values(regions).map(r => {
+      return {id: r.id, points: r.points.map(v => ({x: v.x, y: v.y})), color: r.color}
+    })
+}
+
+function regionDefsToRegions(regionDefs){
+    let newRegions = {}
+    regionDefs.forEach(rd => {
+        let region = new MaskRegion(rd.id);
+        region.color = [255, 255, 255];
+        region.points = rd.points.map(v => createVector(v.x, v.y))
+        newRegions[rd.id] = region;
+    })
+    return newRegions
+}
+
+let markerVis = show => {drawBoundary = show; drawIndex = show};
+
+
+function getScene(){
+    let sceneList = []
+    Object.values(regions).forEach(r =>{
+        sceneList.push(r.lastGestureString);
+    });
+    return sceneList.join("\n");
+}
+
+/*todos
+bug around one-line-at-a-time animation with waits - why is it phasing?
+    - seems to be related to hitting the phase-sync button
+
+phase hit button needs to send an OSC message from supercollider
+
+need to add dleay functionality to allow one-time wait for easy phasing
+
+need a higher level syntax that compiles down to the "low level" syntax
+    - In particular - doing "one region at a time" animation is super tedious.
+      Could make an alternate syntax where you have a "block" where some frames are
+      active, and all other frames are implicitly waiting (or held at their last draw func)
+*/
