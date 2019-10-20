@@ -354,10 +354,21 @@ POTENTIAL ISSUE - drift due to gesture durations not being exact in JS
 
 NICE TO HAVES
 
+add pydal or some other way to do structured randomness in defining gestures
+
+Tap out rhythm (using multiple midi notes) and have an alg generate gestures per hit,
+using the different midi notes to indicate sections or repetition. 
+can have multiple "schemes" for generating mappings from a rhythm
+
+mix in all the midi looping features - sliders mapped to stuff, and looping scene swaps
+
 have a row of circle buttons that are mapped to animation patterns and 
 a row of buttons mapped to regions. When you hold down the button of a pattern,
 any button hit of a region button will cause that region to play that pattern.
 can dynamically remap what patterns/regions are mapped to 8 circles on launchpad
+
+be able to modulate speed of a playing pattern with an "alt" button that's pressed
+while you hit the pattern button
 
 
 create a special func for making a random-direction fil-empty alternator for planes
