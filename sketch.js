@@ -47,6 +47,7 @@ function setup() {
   textFont("Courier New");
   // textStyle(BOLD);
   meter = new FPSMeter(document.body);
+  initWithLetterPane();
 }
 
 let runHookIn = false;
@@ -517,6 +518,13 @@ function getScene(){
         sceneList.push(r.lastGestureString);
     });
     return sceneList.join("\n");
+}
+
+function initWithLetterPane(){
+  regions[0] = new MaskRegion(0)
+  regions[0].points = [createVector(0+100, 0+120), createVector(0, 400+100), createVector(200, 400+100), createVector(400+10, 0+120)]
+  regions[0].updateInternalPoints()
+  activateDropAndScroll(0)
 }
 
 /*todos
