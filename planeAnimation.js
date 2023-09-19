@@ -13,10 +13,14 @@ osc.on("/drawTime", (msg)=>{
 
 let beatFunctions = [];
 let logBeat = false;
-osc.on("/drawBeat", (msg)=>{
+let launchOnBeat = () => {
     beatFunctions.forEach(f => f());
     beatFunctions = [];
-    if(logBeat) console.log("log beat", msg.args[0]);
+    if(logBeat) console.log("log beat");
+}
+
+osc.on("/drawBeat", (msg)=>{
+    launchOnBeat()
 });
 
 osc.on("/phaseHit", (msg)=>{
@@ -41,6 +45,9 @@ function saveBank(bankInd, bankStr){
 
 
 let nowSC = () => drawTime;
+
+nowSC = () => Date.now()/1000;
+setInterval(launchOnBeat, 1000);
 
 let lerp = p5.Vector.lerp;
 
@@ -323,6 +330,8 @@ function* chain(genDefs, reps=Infinity){
     }
 }
 
+//example usage
+//parseGestureString("a line-0.5-rl-2 plane-0.5-lf-1 zoom-2-out-1")
 
 /*
 line types - lr, rl, tb, bt, vert, hor
